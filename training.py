@@ -379,17 +379,17 @@ def main():
         model_refine = patch_learning_model.PatchLearningModel_fewshot_priors_3_encoder(args.no_batchnorm, device, args.channel_num, args.patch_res, truncation=args.truncation)
     elif args.model_stage == 'multi_res' or args.model_stage == 'fine_tune':
         model_shape = patch_learning_model.PatchLearningModel_fewshot_priors_3_encoder(args.no_batchnorm, device, args.channel_num, 32, truncation=args.truncation)
-        model_shape.load_state_dict(torch.load("trained_models/patch_learningres_32_epoch_19.pt")) 
+        model_shape.load_state_dict(torch.load(os.path.join(args.output_path, "patch_learning_res_32.pt"))) 
         model_shape = model_shape.to(device)
         model_8 = patch_learning_model.PatchLearningModel_fewshot_priors_3_encoder(args.no_batchnorm, device, args.channel_num, 8, truncation=args.truncation)
-        model_8.load_state_dict(torch.load("trained_models/patch_learningres_8_epoch_19.pt")) 
+        model_8.load_state_dict(torch.load(os.path.join(args.output_path, "patch_learning_res_8.pt"))) 
         model_8 = model_8.to(device)
         model_4 = patch_learning_model.PatchLearningModel_fewshot_priors_3_encoder(args.no_batchnorm, device, args.channel_num, 4, truncation=args.truncation)
-        model_4.load_state_dict(torch.load("trained_models/patch_learningres_4_epoch_19.pt")) 
+        model_4.load_state_dict(torch.load(os.path.join(args.output_path, "patch_learning_res_4.pt")))
         model_4 = model_4.to(device)
         model_refine = patch_learning_model.ShapeLearningModel_codebook_learning_end_to_end_flatten(False, device, int(args.channel_num*2), model_shape, model_8, model_4)
     elif args.model_stage == 'fine_tune':
-        model_refine.load_state_dict(torch.load('trained_models/multi_res_epoch_19.pt')) 
+        model_refine.load_state_dict(torch.load(args.output_path, "multi_res.pt")) 
     else:
         print ("Please use valid model stages (patch_learning, multi_res, fine_tune)")
         return
