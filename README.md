@@ -39,17 +39,17 @@ externel/depth_fusion.py and externel/pyfusion are the modified version in this 
 ```
 python training.py --data_path data_samples/shapenet --train_file shapenet.txt --val_trained_file shapenet.txt --val_novel_file shapenet.txt --truncation 2.5 --patch_res 32 --dataset shapenet --model_stage patch_learning
 ```
-use `--no_wall_aug` for pretrain
+use `--no_wall_aug` for normal training (not for scannet pretrain)
 
 2. Multires on Shapenet dataset
 ```
 python training.py --data_path data_samples/shapenet --train_file shapenet.txt --val_trained_file shapenet.txt --val_novel_file shapenet.txt --truncation 2.5 --dataset shapenet --model_stage multi_res
 ```
-use `--no_wall_aug` for pretrain
+use `--no_wall_aug` for normal training (not for scannet pretrain)
 
 3. Fine_tune on Scannet dataset
 ```
-python training.py --data_path data_samples/scannet --train_file scannet.txt --val_trained_file scannet.txt --val_novel_file scannet.txt --truncation 3 --dataset scannet --model_stage fine_tune
+python training.py --data_path data_samples/scannet --train_file scannet.txt --val_trained_file scannet.txt --val_novel_file scannet.txt --truncation 3 --dataset scannet --model_stage fine_tune --no_wall_aug
 ```
 
 # Generation

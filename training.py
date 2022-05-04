@@ -187,7 +187,6 @@ def train(device, model, dataloaders, num_epochs, model_stage, output_path, trun
             epoch_samples = 0
             
             for inputs, labels, bbox, _ in dataloaders[phase]:
-                if 
                 if phase == 'train':
                     # data augmentation
                     if no_walls_aug is False:
