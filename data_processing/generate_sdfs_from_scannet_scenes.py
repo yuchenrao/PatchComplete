@@ -1,14 +1,9 @@
 import numpy as np
 import struct
-import IPython
 import os
 import glob
 from scipy import interpolate
-from plyfile import PlyData, PlyElement
-import skimage.measure
 import trimesh
-import math
-import time
 import multiprocessing as mp
 from multiprocessing import Pool
 import gc

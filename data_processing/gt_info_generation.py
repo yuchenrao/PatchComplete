@@ -1,7 +1,5 @@
 import argparse
 import os
-import csv
-import glob
 import json
 import time
 import trimesh
@@ -9,7 +7,6 @@ import quaternion
 import copy
 import numpy as np
 import math
-import IPython
 
 import util
 
@@ -179,17 +176,17 @@ class GTGeneration:
         if os.path.exists(gt_info_name):
             return
         # generate binary mask and related info for this instance
-        voxel_origin, voxel_size = self.generate_gt_info_with_bbox(
-                                            copy.deepcopy(model),
-                                            bbox.bounds,
-                                            bbox.centroid)
+        voxel_origin, voxel_size, binary_mask = self.generate_gt_info_with_bbox(
+                                                    copy.deepcopy(model),
+                                                    bbox.bounds,
+                                                    bbox.centroid)
         np.savez(gt_info_name,
                  T_scales=T_scales,
                  Mmodel2scannet=Mmodel2scannet,
                  Mbbox2model=Mbbox2model,
                  voxel_size=voxel_size,
-                 voxel_origin=voxel_origin)#,
-                #  mask=binary_mask)
+                 voxel_origin=voxel_origin,
+                 mask=binary_mask)
         print (gt_info_name)
 
     def generate_gt_info_with_bbox(self, mesh, bounds, centroid):
@@ -212,33 +209,28 @@ class GTGeneration:
         # translate mesh based on the center of bbox
         mesh.apply_translation(-centroid)
         # get voxel size for generating cube
-        voxel_size = max(bounds[:][1] - bounds[:][0]) / self._cube_dimension
-        # origin of local voxels
-        local_origin = centroid - (self._cube_dimension + 2 * self._bbox_padding)/ 2 * voxel_size
-
-        '''
-        # save mask
         voxel_size = max(mesh.bounds[:][1] - mesh.bounds[:][0]) / self._cube_dimension
         voxel_size = np.round(voxel_size, 2) if voxel_size < np.round(voxel_size, 2) else np.round(voxel_size, 2) + 0.01
-        print (voxel_size)
-        voxelize translated mesh
+        # voxelize translated mesh
         voxel = mesh.voxelized(voxel_size)
         voxel_filled = voxel.copy().fill(method="orthographic")
         origin = voxel_filled.transform[:3, 3]
         matrix = voxel_filled.encoding.dense
 
-        Find voxel index for point
+        # Find voxel index for point
         center_idx = np.round(-origin / voxel_size).astype(np.int64)
-        get pad number for mesh voxels
+        # get pad number for mesh voxels
         prepad = np.maximum(int(self._cube_dimension / 2) - center_idx, 0) + [self._bbox_padding, self._bbox_padding, self._bbox_padding]
         postpad = np.maximum(center_idx + int(self._cube_dimension / 2) - matrix.shape, 0) + [self._bbox_padding, self._bbox_padding, self._bbox_padding]
         # pad matrix if necessary
         matrix_padded = np.pad(matrix, np.stack((prepad, postpad), axis=-1), mode='constant')
         mask = np.zeros(matrix_padded.shape)
         mask[np.where(matrix_padded==True)] = 1
-        '''
 
-        return local_origin, voxel_size
+        # origin of local voxels
+        local_origin = centroid - (self._cube_dimension + 2 * self._bbox_padding)/ 2 * voxel_size
+        
+        return local_origin, voxel_size, mask
 
     def make_M_from_tqs(self, t, q, s):
         """

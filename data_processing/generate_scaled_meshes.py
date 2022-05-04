@@ -3,12 +3,9 @@ import os
 import glob
 import json
 import trimesh
-import subprocess
 import time
 import copy
 import numpy as np
-import IPython
-import skimage.measure
 
 import util
 
@@ -58,6 +55,7 @@ class InstanceMeshesGeneration:
         self._instance_meshes = {}
         # a dict to map instance_id to its corresponding binary mask file for each scene
         self._instance_masks = {}
+        self._bad_samples = []
 
     def generate_data(self):
         """
@@ -230,33 +228,33 @@ class InstanceMeshesGeneration:
         """
         binary_masks_path = os.path.join(self._gt_info_path, scene_name)
         for mask_file in glob.iglob(os.path.join(binary_masks_path, "*mask.npz")):
-            with np.load(mask_file) as data:
-                aligned_instance_id = self.align_mask(data)
-                if aligned_instance_id == -1:
-                    print ("Cannot find related instance mesh in scannet scene.")
-                    continue
-                if aligned_instance_id in self._instance_masks.keys():
-                    self._instance_masks[aligned_instance_id].append(mask_file)
-                else:
-                    self._instance_masks[aligned_instance_id] = [mask_file]
+            aligned_instance_id = self.align_mask(mask_file)
+            if aligned_instance_id == -1:
+                print ("Cannot find related instance mesh in scannet scene.")
+                continue
+            if aligned_instance_id in self._instance_masks.keys():
+                self._instance_masks[aligned_instance_id].append(mask_file)
+            else:
+                self._instance_masks[aligned_instance_id] = [mask_file]
 
-    def align_mask(self, data):
+    def align_mask(self, mask_file):
         """
         This function aligns the binary mask with its corresponding instance in
         the scene based on annotation data form scan2CAD
 
-        :param data: data from each binary mask file
-        :type data: list
+        :param mask_file: gt info file
+        :type mask_file: str
         :return aligned_instance_id: the instance id aligned with this mask
         :rtype aligned_instance_id: str
         """
         # get related data for mask and bbox
-        Mmodel2scannet = data['Mmodel2scannet']
-        mask = data['mask']
-        bbox_origin = data['voxel_origin']
-        voxel_size = data['voxel_size']
-        Mbbox2model = data['Mbbox2model']
-        T_scales = data['T_scales']
+        with np.load(mask_file) as data:
+            Mmodel2scannet = data['Mmodel2scannet']
+            mask = data['mask']
+            bbox_origin = data['voxel_origin']
+            voxel_size = data['voxel_size']
+            Mbbox2model = data['Mbbox2model']
+            T_scales = data['T_scales']
 
         bbox_mesh_model = self._bbox_mesh.copy()
         bbox_mesh_model.apply_transform(Mbbox2model)
@@ -308,7 +306,7 @@ class InstanceMeshesGeneration:
                                                                  bbox_start[1] : bbox_end[1],
                                                                  bbox_start[2] : bbox_end[2]]
             except:
-                IPython.embed()
+                self._bad_samples.append(mask_file)
             # add mesh to union_matrix
             mesh_idx = np.round((voxel_origin - union_min) / voxel_size).astype(np.int64)
             mesh_mask = np.zeros(voxel_matrix.shape)
