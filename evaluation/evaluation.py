@@ -44,7 +44,7 @@ class Evaluation:
         self._data_path = os.path.join(self._root, args.dataset)
         self._pred_path = os.path.join(self._pred_path, args.dataset)
         # get output file
-        self._points_n = self.args.points_n
+        self._points_n = args.points_n
         self._chamfer_dist = ChamferDistance()
 
     def calculate_iou(self, gt, pred, threshold):
@@ -67,9 +67,9 @@ class Evaluation:
         if np.sum(pred_mask) == 0:
             pred_points = np.zeros((self._points_n, 3))
         else:
-            pred_points, _ = self.get_surface_points(pred_mask, 0, self._points_n, 32)
+            pred_points, _ = self.get_surface_points(pred_mask, 0, 32)
         # get points for gt
-        gt_points, _ = self.get_surface_points(gt_mask, 0, self._points_n, 32)
+        gt_points, _ = self.get_surface_points(gt_mask, 0, 32)
         # calcualte CD
         gt_points_torch = torch.from_numpy(gt_points).cuda().unsqueeze(0).float() 
         pred_points_torch = torch.from_numpy(pred_points).cuda().unsqueeze(0).float()
@@ -91,15 +91,6 @@ class Evaluation:
         points = mesh.sample(self._points_n)
 
         return points, mesh
-
-    def crop_32(self, pred, mask_file):
-        bbox_file = mask_file[:-4]+'_bbox.npy'
-        bbox = np.load(bbox_file)
-        bbox_ori = bbox[:, 0]
-        bbox_end = bbox[:, 1]
-        pred_crop = np.zeros(pred.shape)
-        pred_crop[bbox_ori[0]:bbox_end[0], bbox_ori[1]:bbox_end[1], bbox_ori[2]:bbox_end[2]] = pred[bbox_ori[0]:bbox_end[0], bbox_ori[1]:bbox_end[1], bbox_ori[2]:bbox_end[2]]
-        return pred_crop
 
     def evaluate_shapenet(self):
         """
@@ -124,11 +115,11 @@ class Evaluation:
                         pred = data['predicted_voxels']
                         pred_mask = np.zeros(pred.shape)
                         pred_mask[np.where(pred<=1e-10)] = 1
-                    # evaluate IOU and f1
+                    # evaluate IOU, f1 and cd
                     iou = self.calculate_iou(gt_mask, pred_mask, 0.5)
                     miss, redundant, f1 = self.calculate_f1(gt_mask, pred_mask)
                     cd = self.calculate_cd(gt_mask, pred_mask)
-                    eval_res[pred_name] = [cd, iou, miss, redundant, f1, pred_name]
+                    eval_res[pred_name] = [cd[0], iou, miss, redundant, f1, pred_name]
                     
         print ("costing time:")
         print (time.time() - start_time)
@@ -139,43 +130,36 @@ class Evaluation:
         This function gets final cd evaluation results
         """
         start_time = time.time()
-        iou_res = {}
+        eval_res = {}
         # iterate all the files
         with open(self._test_file, 'r') as data:
             gt_files = data.readlines()
             for gt_file in gt_files:
                 gt_file = gt_file.split('\n')[0]
-                mask_file = os.path.join(self._root, gt_file)
-                gt_sdf_file = gt_file[:-8] + "scaled_gt_sdf.npy"
-                gt_pts_name = os.path.join(self._root, gt_sdf_file)
-                if os.path.exists(os.path.join(self._root, gt_file)) is False:
+                mask_file = os.path.join(self._data_path, gt_file)
+                pred_file = os.path.join(self._pred_path, gt_file)
+                pred_file = pred_file[:-4] + '_pred.npz'
+                gt_sdf_file = mask_file[:-8] + "scaled_sdf_gt.npy"
+                if (os.path.exists(gt_sdf_file) is False or 
+                    os.path.exists(pred_file) is False):
                     continue
-                with np.load(os.path.join(self._root, gt_file), 'rb') as data:
-                    voxel_size = data["voxel_size"]
-                with open(gt_pts_name, 'rb') as data:
+                with open(gt_sdf_file, 'rb') as data:
                     gt = np.load(data)
-                    gt /= voxel_size
                     gt_mask = np.zeros(gt.shape)
                     gt_mask[np.where(gt<=1e-10)] = 1
-                pred_pts_name = os.path.join(self._pred_path, gt_file[:-4] + '_pred.npz') 
-                if os.path.exists(pred_pts_name) is False:
-                    continue
-                with np.load(pred_pts_name, 'rb') as data:
-                    pred = data['predicted_voxels'][0]
+                with np.load(pred_file, 'rb') as data:
+                    pred = data['predicted_voxels']
                     pred_mask = np.zeros(pred.shape)
                     pred_mask[np.where(pred<=1e-10)] = 1
-                    pred_mask = self.crop_32(pred_mask, mask_file)
-                iou = self.calculate_iou(gt_mask, pred_mask, 0.4)
-                mask_t = copy.deepcopy(gt_mask)
-                mask_t[np.where(pred_mask==1)] += 10
-                miss = len(np.where(mask_t==1)[0]) / np.sum(gt_mask)
-                redundant = len(np.where(mask_t==10)[0]) / np.sum(gt_mask)
-                f1 = np.sum(np.logical_and(gt_mask, pred_mask)) / (np.sum(np.logical_and(gt_mask, pred_mask)) + 0.5 * np.sum(np.logical_xor(gt_mask, pred_mask)))
-                iou_res[pred_pts_name] = [iou, miss, redundant, f1, gt_pts_name]
+                # evaluate IOU, f1 and cd
+                iou = self.calculate_iou(gt_mask, pred_mask, 0.5)
+                miss, redundant, f1 = self.calculate_f1(gt_mask, pred_mask)
+                cd = self.calculate_cd(gt_mask, pred_mask)
+                eval_res[gt_file] = [cd[0], iou, miss, redundant, f1, gt_file]
         
         print ("costing time:")
         print (time.time() - start_time)
-        return iou_res
+        return eval_res
     
 def parse_arguments():
     """
@@ -211,25 +195,35 @@ def parse_arguments():
                         type=int)
     return parser
 
-def print_results(ious):
+def print_results(eval_res, dataset):
     cats_iou = {}
-    for name, iou in ious.items():
-        cat = name.split('/')[-3]
-        if cat in cats_iou:
-            cats_iou[cat].append(iou)
-        else:
-            cats_iou[cat] = [iou]
+    if dataset == 'shapenet':
+        for name, eval_r in eval_res.items():
+            cat = name.split('/')[-3]
+            if cat in cats_iou:
+                cats_iou[cat].append(eval_r)
+            else:
+                cats_iou[cat] = [eval_r]
+    if dataset == 'scannet':
+        for name, eval_r in eval_res.items():
+            cat = name.split('/')[-1].split('_')[0]
+            if cat in cats_iou:
+                cats_iou[cat].append(eval_r)
+            else:
+                cats_iou[cat] = [eval_r]
     sum_cd = 0
     sum_iou = 0
     sum_miss = 0
     sum_red = 0
     sum_f1 = 0
     sum_len = 0
-    cat_ious = []
     cat_cds = []
+    cat_ious = []
     cat_misses = []
     cat_reds = []
     cat_f1s = []
+    good = []
+    bad = []
     for cat, data_l in cats_iou.items():
         print (cat)
         print (len(data_l))
@@ -251,72 +245,7 @@ def print_results(ious):
             cat_red.append(red)
             cat_f1.append(f1)
             names.append(name)
-        cat_cds.append(np.array(cat_cd).mean())
-        cat_ious.append(np.array(cat_iou).mean())
-        cat_misses.append(np.array(cat_miss).mean())
-        cat_reds.append(np.array(cat_red).mean())
-        cat_f1s.append(np.array(cat_f1).mean())
-        sum_len += len(data_l)
-    for cd in cat_cds:
-        print (cd)
-    for iou in cat_ious:
-        print (iou)
-    print ("instance_cd")
-    print (sum_cd / sum_len)
-    # print ("category cd")
-    print (np.array(cat_cds).mean())  
-    # print ("instance_iou")
-    print (sum_iou / sum_len)
-    # print ("category iou")
-    print (np.array(cat_ious).mean())
-    # print ("instance_miss")
-    print (sum_miss / sum_len)
-    # print ("category miss")
-    print (np.array(cat_misses).mean())
-    # print ("instance_red")
-    print (sum_red / sum_len)
-    # print ("category red")
-    print (np.array(cat_reds).mean())
-    # print ("instance_f1")
-    print (sum_f1 / sum_len)
-    # print ("category f1")
-    print (np.array(cat_f1s).mean())
-
-def print_results_scannet(ious):
-    cats_iou = {}
-    for name, iou in ious.items():
-        cat = name.split('/')[-1].split('_')[0]
-        if cat in cats_iou:
-            cats_iou[cat].append(iou)
-        else:
-            cats_iou[cat] = [iou]
-    sum_iou = 0
-    sum_miss = 0
-    sum_red = 0
-    sum_f1 = 0
-    sum_len = 0
-    cat_ious = []
-    cat_misses = []
-    cat_reds = []
-    cat_f1s = []
-    good = []
-    bad = []
-    for cat, data_l in cats_iou.items():
-        cat_iou = []
-        cat_miss = []
-        cat_red = []
-        cat_f1 = []
-        names = []
-        for iou, miss, red, f1, name in data_l:
-            sum_iou += iou
-            sum_miss += miss
-            sum_red += red
-            sum_f1 += f1
-            cat_iou.append(iou)
-            cat_miss.append(miss)
-            cat_red.append(red)
-            cat_f1.append(f1)
-            names.append(name)
+        cat_cds.append(np.array(cat_cd).mean())    
         cat_ious.append(np.array(cat_iou).mean())
         cat_misses.append(np.array(cat_miss).mean())
         cat_reds.append(np.array(cat_red).mean())
@@ -326,24 +255,29 @@ def print_results_scannet(ious):
         bad.append(names[bad_idx])
         good_idx = cat_iou.index(max(cat_iou))
         good.append(names[good_idx])
-
+    for cd in cat_cds:
+        print (cd)
     for iou in cat_ious:
         print (iou)
-    # print ("instance_iou")
+    print ("instance_cd")
+    print (sum_cd / sum_len)
+    print ("category cd")
+    print (np.array(cat_cds).mean())
+    print ("instance_iou")
     print (sum_iou / sum_len)
-    # print ("category iou")
+    print ("category iou")
     print (np.array(cat_ious).mean())
-    # print ("instance_miss")
+    print ("instance_miss")
     print (sum_miss / sum_len)
-    # print ("category miss")
+    print ("category miss")
     print (np.array(cat_misses).mean())
-    # print ("instance_red")
+    print ("instance_red")
     print (sum_red / sum_len)
-    # print ("category red")
+    print ("category red")
     print (np.array(cat_reds).mean())
-    # print ("instance_f1")
+    print ("instance_f1")
     print (sum_f1 / sum_len)
-    # print ("category f1")
+    print ("category f1")
     print (np.array(cat_f1s).mean())
     print (sum_len)
     print ('good')
@@ -369,10 +303,10 @@ def main():
     evaluator = Evaluation(args)
     if args.dataset == "shapenet":
         eval_res = evaluator.evaluate_shapenet()
-        print_results(eval_res)
+        print_results(eval_res, "shapenet")
     if args.dataset == "scannet":
-        eval_res = evaluator.evaluate_scannt()
-        print_results_scannet(eval_res)
+        eval_res = evaluator.evaluate_scannet()
+        print_results(eval_res, "scannet")
 
 if __name__ == "__main__":
     main()
