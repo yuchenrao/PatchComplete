@@ -1,0 +1,28 @@
+name: patch_learning
+channels:
+  - conda-forge
+  - pytorch
+  - open3d-admin
+  - anaconda
+dependencies:
+  - python=3.8
+  - numpy>=1.19
+  - scipy>=1.5
+  - scikit-learn>=0.23
+  - scikit-image>=0.17
+  - matplotlib>=3.3.3
+  - seaborn>=0.9
+  - pillow>=8.0
+  - jupyter>=1.0.0
+  - h5py
+  - tqdm
+  - trimesh>=3.8
+  - pytorch=1.9
+  - torchvision>=0.8
+  - pytorch-lightning=1.0.8
+  - open3d>=0.11
+  - opencv>=4.5
+  - nltk>=3.3
+  - ipython
+  - tensorboard
+  - quaternion
