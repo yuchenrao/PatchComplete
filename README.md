@@ -69,7 +69,7 @@ cd evaluation
 ```
 1. Shapenet
 ```
-python evaluation/evaluation.py --dataset shapenet --test_file ../shapenet.txt --pred_path ../output --root ../data_samples
+python evaluation.py --dataset shapenet --test_file ../shapenet.txt --pred_path ../output --root ../data_samples
 ```
 2. Scannet
 ```
