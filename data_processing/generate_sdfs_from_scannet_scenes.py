@@ -47,8 +47,8 @@ class TsdfExtractor:
         self._truncated_value = 0.15
         self._debug = False
         # get bbox mesh
-        bbox_file = "/mnt/login_cluster/gimli/yrao/bbox.ply" # bbox model from Scan2CAD dataset
-        self._bbox_mesh = trimesh.load(bbox_file)
+        # bbox_file = "/mnt/login_cluster/gimli/yrao/bbox.ply" # bbox model from Scan2CAD dataset
+        # self._bbox_mesh = trimesh.load(bbox_file)
         # bbox padding
         self._voxel_extend = 2
         self._grid_res = grid_res
@@ -124,14 +124,13 @@ class TsdfExtractor:
 
         # get obj files
         mask_idx = 0
-        for obj_file in glob.iglob(os.path.join(self._scene_path, "*mask.obj")):
-            path_list = obj_file.split("/")[-1].split("_")
-            mask_file = os.path.join(self._scene_path, path_list[1] + "_" + path_list[2] + "_" + path_list[3] + "_mask.npz")
+        for mask_file in glob.iglob(os.path.join(self._scene_path, "*mask.npz")):
             instance_sdf_file = mask_file[:-8] + "_sdf.npz"
             # get sdf and mask for instance
             try:
-                instance_sdf, instance_mask, mask_file = self.get_instance_data(obj_file, Tscannet2generate, sample_sdf, sdf_grid_coords, sdf_vox, mask_idx)
-                np.savez(instance_sdf_file, instance_sdf=instance_sdf, instance_mask=instance_mask)
+                instance_sdf, mask_file = self.get_instance_data(mask_file, Tscannet2generate, sample_sdf, sdf_grid_coords, sdf_vox, mask_idx)
+                # np.savez(instance_sdf_file, instance_sdf=instance_sdf, instance_mask=instance_mask)
+                np.savez(instance_sdf_file, instance_sdf=instance_sdf)
             except:
                 self._bad_cases.append(mask_file)
             mask_idx += 1
@@ -162,10 +161,7 @@ class TsdfExtractor:
         p.join()
         return out
 
-    def get_instance_data(self, obj_file, Tscannet2generate, sample_sdf, sdf_grid_coords, sdf_vox, mask_idx):
-        # get info in mask file
-        path_list = obj_file.split("/")[-1].split("_")
-        mask_file = os.path.join(self._scene_path, path_list[1] + "_" + path_list[2] + "_" + path_list[3] + "_mask.npz")
+    def get_instance_data(self, mask_file, Tscannet2generate, sample_sdf, sdf_grid_coords, sdf_vox, mask_idx):
         # print (mask_file)
         with np.load(mask_file) as data:
             Mmodel2scannet=data["Mmodel2scannet"]
@@ -206,9 +202,9 @@ class TsdfExtractor:
         sdf_final[x_sdf, y_sdf, z_sdf] = sdf_model
 
         # get mask
-        instance_mask = self.get_instance_mask(obj_file, voxel_size, voxel_origin, Mbbox2model, Tscales)
+        # instance_mask = self.get_instance_mask(obj_file, voxel_size, voxel_origin, Mbbox2model, Tscales)
         
-        return sdf_final, instance_mask, mask_file
+        return sdf_final, mask_file
 
     def get_instance_mask(self, obj_file, voxel_size, voxel_origin, Mbbox2model, Tscales):
         instance_mesh = trimesh.load(obj_file, process=False)
