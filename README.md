@@ -15,17 +15,17 @@ Please follow the processing steps here: https://github.com/yinyunie/depth_rende
 
 1. Get object GT info based on Scan2CAD annotation and ShapeNet models
 ```
-python data_processing/gt_info_generation.py --annotation_file ~/research/scan2cad_download_link/full_annotations.json --map_file data_processing/scannetv2-labels.combined.csv --shapeNet_path /mnt/login_canis/ShapeNet/ShapeNetCore.v2 --bbox_mesh_file ~/research/Scan2CAD/Routines/Script/bbox.ply
+python data_processing/gt_info_generation.py --annotation_file your/path/to/scan2cad_download_link/full_annotations.json --map_file your/path/to/scannetv2-labels.combined.csv --shapeNet_path /your/path/to/ShapeNet/ShapeNetCore.v2 --bbox_mesh_file your/path/to/Scan2CAD/Routines/Script/bbox.ply --output_path data_samples/scannet
 ```
 
 2. Extract SDF inputs from ScanNet scenes
 ```
-python data_processing/generate_sdfs_from_scannet_scenes.py
-```
+python data_processing/generate_sdfs_from_scannet_scenes.py --sdf_path your/path/to/scannet/scannet_2cm_sdf --scan_path your/path/to/ScanNet/public/v2/scans --mask_path dataset_samples/scannet
+``` 
 
 3. Generate scaled meshes for ShapeNet GT models based on Scan2CAD annotation
 ```
-python data_processing/generate_scaled_meshes.py --scene_path /mnt/login_canis/Datasets/ScanNet/public/v2/scans --gt_info_path /mnt/login_cluster/gimli/yrao/output_new_coords/ --output_path /mnt/login_cluster/gimli/yrao/output_new_coords/
+python data_processing/generate_scaled_meshes.py --scene_path your/path/to/ScanNet/public/v2/scans --gt_info_path data_samples/scannet --output_path data_samples/scannet
 ```
 
 4. Generate TSDFs for scaled shapeNet meshes

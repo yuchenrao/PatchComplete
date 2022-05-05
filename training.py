@@ -22,16 +22,16 @@ def calc_loss_l1_weighted(shape_priors, target_sdf, metrics, name):
     criterion_l1 = nn.SmoothL1Loss(reduction='none')
     loss_l1_ori = criterion_l1(shape_priors, target_sdf)
     target_mask = np.zeros(target_sdf.shape)
-    target_mask[np.where(target_sdf.cpu().detach().numpy() >= 1e-10)] = 1 # opposite but better
+    target_mask[np.where(target_sdf.cpu().detach().numpy() <= 1e-10)] = 1
     pred_mask = np.zeros(shape_priors.shape)
-    pred_mask[np.where(shape_priors.cpu().detach().numpy() >= 1e-10)] = 1
+    pred_mask[np.where(shape_priors.cpu().detach().numpy() <= 1e-10)] = 1
     false_pos_mask = np.zeros(shape_priors.shape)
     false_neg_mask = np.zeros(shape_priors.shape)
     false_pos_mask[np.where((pred_mask==1) & (target_mask==0))] = 1
     false_pos_mask_cuda = torch.from_numpy(false_pos_mask).cuda()
     false_neg_mask[np.where((pred_mask==0) & (target_mask==1))] = 1
     false_neg_mask_cuda = torch.from_numpy(false_neg_mask).cuda()
-    loss_l1 = torch.mean(false_pos_mask_cuda * loss_l1_ori * 5 + false_neg_mask_cuda * loss_l1_ori * 3 + (1 - false_neg_mask_cuda - false_pos_mask_cuda) * loss_l1_ori) # weight false positiva / false negative
+    loss_l1 = torch.mean(false_neg_mask_cuda * loss_l1_ori * 5 + false_pos_mask_cuda * loss_l1_ori * 3 + (1 - false_neg_mask_cuda - false_pos_mask_cuda) * loss_l1_ori) # weight false positiva / false negative
 
     loss_l1_data = loss_l1.data.cpu().numpy()
     metrics['loss'+name] += loss_l1_data * target_sdf.size(0)
@@ -125,7 +125,7 @@ def mask_generation(inputs, mask_value):
     masked_inputs = inputs * mask + mask_value * (1 - mask)
     return masked_inputs
 
-def train(device, model, dataloaders, num_epochs, model_stage, output_path, truncation, lr, no_walls_aug, patch_res=0):
+def train(device, model, dataloaders, save_epoch, num_epochs, model_stage, output_path, truncation, lr, no_walls_aug, patch_res=0):
     """
     This function trains a model based on the training and validation datasets
 
@@ -135,6 +135,8 @@ def train(device, model, dataloaders, num_epochs, model_stage, output_path, trun
     :type model: torch.nn.Module
     :param dataloaders: dataloader for training and validation dataset
     :type dataloaders: torch.utils.data.DataLoader
+    :param save_epoch: save models after how many epochs
+    :param save_epoch: int
     :param num_epochs: the number of epoches
     :param num_epochs: int
     :param model_stage: model stage: patch_learning, multi_res, fine_tune
@@ -228,7 +230,7 @@ def train(device, model, dataloaders, num_epochs, model_stage, output_path, trun
 
         exp_lr_scheduler.step()
         # save model
-        if (epoch + 1) % 20 == 0:
+        if (epoch + 1) % save_epoch == 0:
             if model_stage == "patch_learning":
                 model_name = model_stage + "_res_" + str(patch_res) + "_epoch_" + str(epoch) + ".pt"
             else:
@@ -305,6 +307,10 @@ def parse_arguments():
     parser.add_argument("--channel_num",
                         help="number of channels for learning",
                         default=128,
+                        type=int)
+    parser.add_argument("--save_epoch",
+                        help="save model after how many epoches",
+                        default=20,
                         type=int)
     parser.add_argument("--gpu",
                         help="gpu index for training",
@@ -400,7 +406,7 @@ def main():
     # training
     print("Start training")
     start_time = time.time() 
-    train(device, model_refine, dataloaders, args.num_epochs, args.model_stage, args.output_path, args.truncation, args.lr, args.no_wall_aug, args.patch_res)
+    train(device, model_refine, dataloaders, args.save_epoch, args.num_epochs, args.model_stage, args.output_path, args.truncation, args.lr, args.no_wall_aug, args.patch_res)
     train_time = time.time() - start_time
     print ("training time: {}".format(train_time))
 

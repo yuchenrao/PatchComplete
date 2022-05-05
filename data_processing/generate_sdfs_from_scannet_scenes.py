@@ -7,6 +7,7 @@ import trimesh
 import multiprocessing as mp
 from multiprocessing import Pool
 import gc
+import argparse
 
 class SampleSDF:
     def __init__(self, dims=[0, 0, 0], res=0, world2grid=None, num_locations=None, locations=None, sdfs=None):
@@ -31,10 +32,7 @@ class SampleKNW:
         self.knowns = knowns
         
 class TsdfExtractor:
-    def __init__(self, sdf_path="/mnt/login_cluster_HDD/sorona/adai/data/scannet/scannet_2cm_sdf",
-                       scan_path="/mnt/login_canis/Datasets/ScanNet/public/v2/scans/",
-                       mask_path="/mnt/login_cluster/gimli/yrao/output_new_coords",
-                       grid_res=32):
+    def __init__(self, sdf_path, scan_path, mask_path, grid_res=32):
         self._sdf_path = sdf_path
         self._scan_path = scan_path
         self._mask_path = mask_path
@@ -160,10 +158,10 @@ class TsdfExtractor:
         # print (mask_file)
         with np.load(mask_file) as data:
             Mmodel2scannet=data["Mmodel2scannet"]
-            Mbbox2model = data["Mbbox2model"]
+            # Mbbox2model = data["Mbbox2model"]
             voxel_size = data["voxel_size"]
             voxel_origin = data["voxel_origin"]
-            Tscales = data["T_scales"]
+            # Tscales = data["T_scales"]
 
         # get related transformation matrix
         Tmodel2generate = Tscannet2generate @ Mmodel2scannet
@@ -302,11 +300,39 @@ class TsdfExtractor:
         s.known = np.transpose(s.known, (2,1,0)).copy()
         return s
 
+def parse_arguments():
+    """
+    Generates a command line parser that supports all arguments used by the
+    tool.
+
+    :return: Parser with all arguments.
+    :rtype: argparse.ArgumentParser
+    """
+    parser = argparse.ArgumentParser()
+    # required parameters
+    parser.add_argument("--sdf_path",
+                        help="path for sdfs for scannet scenes",
+                        required=True,
+                        type=str)
+    parser.add_argument("--scan_path",
+                        help="path for scannet scenes",
+                        required=True,
+                        type=str)
+    parser.add_argument("--mask_path",
+                        help="path to save the generated files",
+                        default="data_samples/scannet",
+                        type=str)
+
+    return parser
+
 def main():
-    tsdf_extractor = TsdfExtractor()
+    args = parse_arguments.parse_args()
+    tsdf_extractor = TsdfExtractor(args.sdf_path, args.scan_path, args.mask_path)
     tsdf_extractor.extract_data_multi_process()
     # print (tsdf_extractor._bad_scene)
     # print (tsdf_extractor._bad_cases)
 
 if __name__ == "__main__":
     main()
+
+

@@ -8,21 +8,12 @@ sys.path.append('.')
 import os
 from external import pyfusion
 from data_config import shapenet_rendering_path, camera_setting_path, total_view_nums, object_root, processing_file
-from tools.read_and_write import read_exr, read_txt, read_json, load_scaled_obj_file
+from tools.read_and_write import read_exr, read_txt, load_scaled_obj_file
 import numpy as np
 # import mcubes
 from multiprocessing import Pool
 from functools import partial
 from tools.utils import dist_to_dep
-from settings import cpu_cores
-from tools.read_and_write import load_data_path
-from visualization.pc_painter import PC_from_DEP
-import IPython
-import time
-
-import trimesh
-import skimage.measure
-
 
 voxel_res = 128
 truncation_factor = 12
@@ -49,7 +40,7 @@ def process_mesh(obj_path, view_ids):
 
     '''Decide save path'''
     scene_name, mask = obj_path.split('/')[-2:]
-    output_path = os.path.join('/mnt/login_cluster/ikarus/yrao/scennet', scene_name)
+    output_path = os.path.join('your/path/to/scennet', scene_name) # change path
     if not os.path.exists(output_path):
 	    os.mkdir(output_path)
     output_file = os.path.join(output_path, mask[:-4] + '_sdf_gt.npy')

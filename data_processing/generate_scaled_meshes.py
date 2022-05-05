@@ -364,7 +364,7 @@ def parse_arguments():
     # optional parameters
     parser.add_argument("--output_path",
                         help="path to save the training files",
-                        default="./output",
+                        default="data_samples/scannet",
                         type=str)
     parser.add_argument("--overlap_vox_min",
                         help="the min number of voxels for considering mask and mesh"

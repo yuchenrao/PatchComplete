@@ -307,7 +307,7 @@ def parse_arguments():
     # optional parameters
     parser.add_argument("--output_path",
                         help="path to save the training files",
-                        default="/mnt/login_cluster/gimli/yrao/output_new_coords/",
+                        default="data_samples/scannet",
                         type=str)
     parser.add_argument("--cube_dimension",
                         help="cube dimension for generated voxel grids from mesh",
