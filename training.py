@@ -125,7 +125,7 @@ def mask_generation(inputs, mask_value):
     masked_inputs = inputs * mask + mask_value * (1 - mask)
     return masked_inputs
 
-def train(device, model, dataloaders, save_epoch, num_epochs, model_stage, output_path, truncation, lr, no_walls_aug, patch_res=0):
+def train(device, model, dataloaders, save_epoch, step, num_epochs, model_stage, output_path, truncation, lr, no_walls_aug, patch_res=0):
     """
     This function trains a model based on the training and validation datasets
 
@@ -137,6 +137,8 @@ def train(device, model, dataloaders, save_epoch, num_epochs, model_stage, outpu
     :type dataloaders: torch.utils.data.DataLoader
     :param save_epoch: save models after how many epochs
     :param save_epoch: int
+    :param step: decrease lr after how may epochs
+    :param step: int
     :param num_epochs: the number of epoches
     :param num_epochs: int
     :param model_stage: model stage: patch_learning, multi_res, fine_tune
@@ -153,7 +155,7 @@ def train(device, model, dataloaders, save_epoch, num_epochs, model_stage, outpu
     :rtype: torch.nn.Module
     """
     optimizer = optim.Adam(model.parameters(), lr=lr)#, weight_decay=0.0001)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5) 
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step, gamma=0.5) 
 
     # fix parameters for training
     for name, p in model.named_parameters():
@@ -191,7 +193,7 @@ def train(device, model, dataloaders, save_epoch, num_epochs, model_stage, outpu
             for inputs, labels, bbox, _ in dataloaders[phase]:
                 if phase == 'train':
                     # data augmentation
-                    if no_walls_aug is False:
+                    if no_walls_aug:
                         # only for shapenet pretrain
                         inputs = add_walls(inputs, bbox)
                     inputs, labels = mirror(inputs, labels)
@@ -309,9 +311,16 @@ def parse_arguments():
                         default=128,
                         type=int)
     parser.add_argument("--save_epoch",
-                        help="save model after how many epoches",
+                        help="save model after how many epochs",
                         default=20,
                         type=int)
+    parser.add_argument("--step",
+                        help="decrease lr after how may epochs",
+                        default=50,
+                        type=int)
+    parser.add_argument("--load_model",
+                        help="the model for continue training",
+                        type=str)
     parser.add_argument("--gpu",
                         help="gpu index for training",
                         default=0,
@@ -399,6 +408,13 @@ def main():
         print ("Please use valid model stages (patch_learning, multi_res, fine_tune)")
         return
 
+    # load models if provided
+    if args.load_model is not None:
+        model_name = args.load_model
+        model_path = os.path.join(args.output_path, model_name)
+        model_refine.load_state_dict(torch.load(model_path))
+        print ("Load model {}".format(model_name))
+
     model_refine = model_refine.to(device)
     print (model_refine)
     print (sum(p.numel() for p in model_refine.parameters() if p.requires_grad))
@@ -406,7 +422,7 @@ def main():
     # training
     print("Start training")
     start_time = time.time() 
-    train(device, model_refine, dataloaders, args.save_epoch, args.num_epochs, args.model_stage, args.output_path, args.truncation, args.lr, args.no_wall_aug, args.patch_res)
+    train(device, model_refine, dataloaders, args.save_epoch, args.step, args.num_epochs, args.model_stage, args.output_path, args.truncation, args.lr, args.no_wall_aug, args.patch_res)
     train_time = time.time() - start_time
     print ("training time: {}".format(train_time))
 
