@@ -58,7 +58,7 @@ python training.py --data_path data_samples/scannet --train_file scannet.txt --v
 ```
 python generation.py --data_path data_samples/shapenet --model_name multi_res.pt --dataset shapenet --model_stage multi_res --truncation 2.5 --test_file shapenet.txt
 ```
-2. Scanner
+2. Scannet
 ```
 python generation.py --data_path data_samples/scannet --model_name fine_tune.pt --dataset scannet --model_stage multi_res --truncation 3 --test_file scannet.txt
 ```
