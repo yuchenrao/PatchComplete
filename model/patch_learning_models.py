@@ -178,7 +178,7 @@ class PatchLearningModel_fewshot_priors_3_encoder(nn.Module):
             prior_features = torch.flatten(prior_features, start_dim=0, end_dim=1)
         
         # get attention scores
-        patch_features = patch_features / math.sqrt(self._channel_num)
+        patch_features = patch_features / self._channel_num
         learned_weights = torch.matmul(patch_features, prior_features.transpose(1, 0))
         if self._patch_res != 4:
             learned_weights = self._relu(self._weights_bn_1(self._weights_1(learned_weights)))
