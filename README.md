@@ -1,10 +1,10 @@
 # PatchComplete
-This is the official code for "Learning Multi-Resolution Patch Priors for 3D Shape Completion on Unseen Categories"
+This is the official code for "PatchComplete: Learning Multi-Resolution Patch Priors for 3D Shape Completion on Unseen Categories".
 
 # Build environment for conda
 ```
-conda env create -f patch_learning.yaml
-conda activate patch_learning
+conda env create -f patch_complete.yaml
+conda activate patch_complete
 ```
 
 # Data pre-processing for ShapeNet
