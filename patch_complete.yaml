@@ -1,4 +1,4 @@
-name: patch_learning
+name: patch_complete
 channels:
   - conda-forge
   - pytorch
