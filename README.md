@@ -7,6 +7,18 @@ conda env create -f patch_complete.yaml
 conda activate patch_complete
 ```
 
+# Download Processed Datasets
+
+1. ScanNet
+```
+wget kaldir.vc.in.tum.de/yrao/scannet.zip
+```
+
+2. ShapeNet 
+```
+wget kaldir.vc.in.tum.de/yrao/shapenet.zip
+```
+
 # Data pre-processing for ShapeNet
 
 Please follow the processing steps here: https://github.com/yinyunie/depth_renderer
