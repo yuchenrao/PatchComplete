@@ -25,6 +25,11 @@ Please follow the processing steps here: https://github.com/yinyunie/depth_rende
 
 # Data pre-processing for ScanNet
 
+0. Download sdfs for ScanNet Scene
+```
+wget kaldir.vc.in.tum.de/yrao/scannet_2cm_sdf.zip
+```
+
 1. Get object GT info based on Scan2CAD annotation and ShapeNet models
 ```
 python data_processing/gt_info_generation.py --annotation_file your/path/to/scan2cad_download_link/full_annotations.json --map_file your/path/to/scannetv2-labels.combined.csv --shapeNet_path /your/path/to/ShapeNet/ShapeNetCore.v2 --bbox_mesh_file your/path/to/Scan2CAD/Routines/Script/bbox.ply --output_path data_samples/scannet
