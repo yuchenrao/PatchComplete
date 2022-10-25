@@ -54,30 +54,30 @@ externel/depth_fusion.py and externel/pyfusion are the modified version in this 
 
 1. Patch_learning on Shapenet dataset
 ```
-python training.py --data_path data_samples/shapenet --train_file shapenet.txt --val_trained_file shapenet.txt --val_novel_file shapenet.txt --truncation 2.5 --patch_res 32 --dataset shapenet --model_stage patch_learning
+python training.py --data_path data/shapenet --train_file txt_files/shapenet_train.txt --val_trained_file txt_files/shapenet_val.txt --val_novel_file txt_files/shapenet_val_novel.txt --truncation 2.5 --patch_res 32 --dataset shapenet --model_stage patch_learning
 ```
 use `--no_wall_aug` for normal training (not for scannet pretrain)
 
 2. Multires on Shapenet dataset
 ```
-python training.py --data_path data_samples/shapenet --train_file shapenet.txt --val_trained_file shapenet.txt --val_novel_file shapenet.txt --truncation 2.5 --dataset shapenet --model_stage multi_res
+python training.py --data_path data/shapenet ---train_file txt_files/shapenet_train.txt --val_trained_file txt_files/shapenet_val.txt --val_novel_file txt_files/shapenet_val_novel.txt --truncation 2.5 --dataset shapenet --model_stage multi_res
 ```
 use `--no_wall_aug` for normal training (not for scannet pretrain)
 
 3. Fine_tune on Scannet dataset
 ```
-python training.py --data_path data_samples/scannet --train_file scannet.txt --val_trained_file scannet.txt --val_novel_file scannet.txt --truncation 3 --dataset scannet --model_stage fine_tune --no_wall_aug
+python training.py --data_path data/scannet --train_file txt_files/scannet_train.txt --val_trained_file txt_files/scannet_val.txt --val_novel_file txt_files/scannet_val_novel.txt --truncation 3 --dataset scannet --model_stage fine_tune --no_wall_aug
 ```
 
 # Generation
 
 1. Shapenet
 ```
-python generation.py --data_path data_samples/shapenet --model_name multi_res.pt --dataset shapenet --model_stage multi_res --truncation 2.5 --test_file shapenet.txt
+python generation.py --data_path data/shapenet --model_name multi_res.pt --dataset shapenet --model_stage multi_res --truncation 2.5 --test_file txt_files/shapenet_test.txt
 ```
 2. Scannet
 ```
-python generation.py --data_path data_samples/scannet --model_name fine_tune.pt --dataset scannet --model_stage multi_res --truncation 3 --test_file scannet.txt
+python generation.py --data_path data/scannet --model_name fine_tune.pt --dataset scannet --model_stage multi_res --truncation 3 --test_file txt_files/scannet_test.txt
 ```
 
 # Evaluation
@@ -86,9 +86,9 @@ cd evaluation
 ```
 1. Shapenet
 ```
-python evaluation.py --dataset shapenet --test_file ../shapenet.txt --pred_path ../output --root ../data_samples
+python evaluation.py --dataset shapenet --test_file ../shapenet_test.txt --pred_path ../output --root ../data
 ```
 2. Scannet
 ```
-python evaluation.py --dataset scannet --test_file ../scannet.txt --pred_path ../output --root ../data_samples
+python evaluation.py --dataset scannet --test_file ../scannet_test.txt --pred_path ../output --root ../data
 ```
