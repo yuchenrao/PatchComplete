@@ -19,6 +19,9 @@ wget kaldir.vc.in.tum.de/yrao/scannet.zip
 wget kaldir.vc.in.tum.de/yrao/shapenet.zip
 ```
 
+3. Save datasets under `/data`.
+
+
 # Data pre-processing for ShapeNet
 
 Please follow the processing steps here: https://github.com/yinyunie/depth_renderer
