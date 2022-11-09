@@ -63,7 +63,7 @@ use `--no_wall_aug` for normal training (not for scannet pretrain)
 
 2. Multires on Shapenet dataset
 ```
-python training.py --data_path data/shapenet ---train_file txt_files/shapenet_train.txt --val_trained_file txt_files/shapenet_val.txt --val_novel_file txt_files/shapenet_val_novel.txt --truncation 2.5 --dataset shapenet --model_stage multi_res
+python training.py --data_path data/shapenet --train_file txt_files/shapenet_train.txt --val_trained_file txt_files/shapenet_val.txt --val_novel_file txt_files/shapenet_val_novel.txt --truncation 2.5 --dataset shapenet --model_stage multi_res
 ```
 use `--no_wall_aug` for normal training (not for scannet pretrain)
 
