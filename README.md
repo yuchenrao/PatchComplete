@@ -89,9 +89,9 @@ cd evaluation
 ```
 1. Shapenet
 ```
-python evaluation.py --dataset shapenet --test_file ../shapenet_test.txt --pred_path ../output --root ../data
+python evaluation.py --dataset shapenet --test_file ../txt_files/shapenet_test.txt --pred_path ../output --root ../data
 ```
 2. Scannet
 ```
-python evaluation.py --dataset scannet --test_file ../scannet_test.txt --pred_path ../output --root ../data
+python evaluation.py --dataset scannet --test_file ../txt_files/scannet_test.txt --pred_path ../output --root ../data
 ```
