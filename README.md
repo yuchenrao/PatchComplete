@@ -55,6 +55,11 @@ externel/depth_fusion.py and externel/pyfusion are the modified version in this 
 
 # Training
 
+0. Download Trained Models (rerun the experiments so have different numbers compared with the paper)
+```
+wget kaldir.vc.in.tum.de/yrao/trained_models.zip
+```
+
 1. Patch_learning on Shapenet dataset
 ```
 python training.py --data_path data/shapenet --train_file txt_files/shapenet_train.txt --val_trained_file txt_files/shapenet_val.txt --val_novel_file txt_files/shapenet_val_novel.txt --truncation 2.5 --patch_res 32 --dataset shapenet --model_stage patch_learning
