@@ -159,7 +159,7 @@ def train(device, model, dataloaders, save_epoch, step, num_epochs, model_stage,
 
     # fix parameters for training
     for name, p in model.named_parameters():
-        if model_stage == "multires":
+        if model_stage == "multi_res":
             if '_decoder' in name or '_conv_last' in name:
                 p.requires_grad = True
             else:
